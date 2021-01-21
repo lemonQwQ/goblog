@@ -11,7 +11,7 @@ func handlerFunc(w http.ResponseWriter, r *http.Request) {
 	// w.Header().Set("name", "my name is lemon")
 	// fmt.Fprint(w, "请求路径为:"+r.URL.Path)
 	if r.URL.Path == "/" {
-		fmt.Fprint(w, "<h1>Hello, 这里是goblog</h1>")
+		fmt.Fprint(w, "<h1>Hello, 欢迎来到 goblog</h1>")
 	} else if r.URL.Path == "/about" {
 		fmt.Fprint(w, "博客用以记录笔记，如有反馈请联系："+"<a href=\"#\">tt</a>")
 	} else {
