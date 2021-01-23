@@ -3,21 +3,13 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"strings"
+
+	"github.com/gorilla/mux"
 )
 
-func defaultHandler(w http.ResponseWriter, r *http.Request) {
-	// fmt.Fprint(w, "<h1>Hello, 这里是 goblog</h1>")
-	// w.WriteHeader(http.StatusInternalServerError)
-	// w.Header().Set("name", "my name is lemon")
-	// fmt.Fprint(w, "请求路径为:"+r.URL.Path)
-	w.Header().Set("Content-Type", "text/html; charset=utf-8") //标头设置
-	if r.URL.Path == "/" {
-		fmt.Fprint(w, "<h1>Hello, 欢迎来到 goblog</h1>")
-	} else {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, "<h1>请求页面为找到:(</h1>")
-	}
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprint(w, "<h1>Hello, 欢迎来到 goblog</h1>")
 }
 
 func aboutHandler(w http.ResponseWriter, r *http.Request) {
@@ -25,22 +17,43 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "博客用以记录笔记，如有反馈请联系："+"<a href=\"#\">tt</a>")
 }
 
+func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	fmt.Fprint(w, "文章 ID: "+id)
+}
+
+func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, "访问文章列表")
+}
+
+func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, "创建新的文章")
+}
+
+func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusNotFound)
+	fmt.Fprint(w, "<h1>请求页面未找到:(</h1>")
+}
+
 func main() {
-	router := http.NewServeMux()
-	// ‘/’反斜杠代表任意路径
-	router.HandleFunc("/", defaultHandler)
-	router.HandleFunc("/about", aboutHandler)
-	router.HandleFunc("/articles/", func(w http.ResponseWriter, r *http.Request) {
-		id := strings.SplitN(r.URL.Path, "/", 4)[2]
-		fmt.Fprint(w, "文章id = "+id)
-	})
-	router.HandleFunc("/articles", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case "GET":
-			fmt.Fprint(w, "GET method request")
-		case "POST":
-			fmt.Fprint(w, "POST method request")
-		}
-	})
+	router := mux.NewRouter()
+
+	router.HandleFunc("/", homeHandler).Methods("GET").Name("home")
+	router.HandleFunc("/about", aboutHandler).Methods("GET").Name("about")
+
+	router.HandleFunc("/articles/{id:[0-9]+}", articlesShowHandler).Methods("GET").Name("articles.show")
+	router.HandleFunc("/articles", articlesIndexHandler).Methods("GET").Name("articles.index")
+	router.HandleFunc("/articles", articlesStoreHandler).Methods("POST").Name("articles.store")
+
+	router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
+
+	// 通过命名路由获取URL示例
+	homeURL, _ := router.Get("home").URL()
+	fmt.Println("homeURL: ", homeURL)
+	articlesURL, _ := router.Get("articles.show").URL("id", "233")
+	fmt.Println("articlesURL: ", articlesURL)
+
 	http.ListenAndServe(":3000", router)
 }
