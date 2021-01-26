@@ -1,12 +1,12 @@
 package main
 
 import (
-	"strconv"
 	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -21,6 +21,10 @@ type ArticlesFormData struct {
 	Title, Body string
 	URL         *url.URL
 	Errors      map[string]string
+}
+type Article struct {
+	Title, Body string
+	ID          int64
 }
 
 var router = mux.NewRouter()
@@ -70,9 +74,32 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
+	// 1.获取URL参数
 	vars := mux.Vars(r)
 	id := vars["id"]
-	fmt.Fprint(w, "文章 ID: "+id)
+	// fmt.Fprint(w, "文章 ID: "+id)
+
+	// 2.读取对应的文章数据
+	article := Article{}
+	query := "select * from articles where id = ?"
+	err := db.QueryRow(query, id).Scan(&article.ID, &article.Title, &article.Body)
+
+	// 3.如果出现错误
+	if err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "404 文章未找到")
+		} else {
+			checkError(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "500 服务器内部错误")
+		}
+	} else {
+		// fmt.Fprint(w, "读取成功，文章标题："+article.Title+"，文章内容："+article.Body)
+		tmpl, err := template.ParseFiles("resources/views/articles/show.gohtml")
+		checkError(err)
+		tmpl.Execute(w, article)
+	}
 }
 
 func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -158,10 +185,10 @@ func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 
 func saveArticleToDB(title string, body string) (int64, error) {
 	var (
-		id		int64
-		err		error
-		rs		sql.Result
-		stmt	*sql.Stmt
+		id   int64
+		err  error
+		rs   sql.Result
+		stmt *sql.Stmt
 	)
 
 	// 预处理
@@ -182,7 +209,7 @@ func saveArticleToDB(title string, body string) (int64, error) {
 	if id, err = rs.LastInsertId(); id > 0 {
 		return id, nil
 	}
-	
+
 	return 0, err
 }
 
