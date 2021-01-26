@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strconv"
 	"database/sql"
 	"fmt"
 	"log"
@@ -99,11 +100,19 @@ func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(errs) == 0 {
-		fmt.Fprintf(w, "验证通过！<br>")
-		fmt.Fprintf(w, "title 的值为：%v <br>", title)
-		fmt.Fprintf(w, "title 的长度为：%v <br>", utf8.RuneCountInString(title))
-		fmt.Fprintf(w, "body 的值为：%v <br>", body)
-		fmt.Fprintf(w, "body 的长度为：%v <br>", utf8.RuneCountInString(body))
+		// fmt.Fprintf(w, "验证通过！<br>")
+		// fmt.Fprintf(w, "title 的值为：%v <br>", title)
+		// fmt.Fprintf(w, "title 的长度为：%v <br>", utf8.RuneCountInString(title))
+		// fmt.Fprintf(w, "body 的值为：%v <br>", body)
+		// fmt.Fprintf(w, "body 的长度为：%v <br>", utf8.RuneCountInString(body))
+		lastInsertId, err := saveArticleToDB(title, body)
+		if lastInsertId > 0 {
+			fmt.Fprint(w, "插入成功， ID为："+strconv.FormatInt(lastInsertId, 10))
+		} else {
+			checkError(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "500 服务器内部错误")
+		}
 	} else {
 		/*html := `
 		<!DOCTYPE html>
@@ -145,6 +154,36 @@ func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 
 		tmpl.Execute(w, data)
 	}
+}
+
+func saveArticleToDB(title string, body string) (int64, error) {
+	var (
+		id		int64
+		err		error
+		rs		sql.Result
+		stmt	*sql.Stmt
+	)
+
+	// 预处理
+	stmt, err = db.Prepare("insert into articles(title, body) values(?,?)")
+	// 例行的错误检测
+	if err != nil {
+		return 0, err
+	}
+	// 在此函数运行结束后关闭此语句，防止占用sql连接
+	defer stmt.Close()
+
+	// 传参进入绑定的内容
+	rs, err = stmt.Exec(title, body)
+	if err != nil {
+		return 0, err
+	}
+
+	if id, err = rs.LastInsertId(); id > 0 {
+		return id, nil
+	}
+	
+	return 0, err
 }
 
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
