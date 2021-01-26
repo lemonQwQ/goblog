@@ -202,8 +202,20 @@ func articlesCreateHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, data)
 }
 
+func createTables() {
+	createArticlesSQL := `create table if not exists articles(
+		id bigint(20) primary key auto_increment not null,
+		title varchar(255) collate utf8mb4_unicode_ci not null,
+		body longtext collate utf8mb4_unicode_ci
+	);
+	`
+	_, err := db.Exec(createArticlesSQL)
+	checkError(err)
+}
+
 func main() {
 	initDB()
+	createTables()
 
 	router.HandleFunc("/", homeHandler).Methods("GET").Name("home")
 	router.HandleFunc("/about", aboutHandler).Methods("GET").Name("about")
