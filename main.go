@@ -17,11 +17,14 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// ArticlesFormData 创建博文表单数据
 type ArticlesFormData struct {
 	Title, Body string
 	URL         *url.URL
 	Errors      map[string]string
 }
+
+// Article  对应一条文章数据
 type Article struct {
 	Title, Body string
 	ID          int64
@@ -29,6 +32,16 @@ type Article struct {
 
 var router = mux.NewRouter()
 var db *sql.DB
+
+// Link 方法用来生成文章链接
+func (a Article) Link() string {
+	showURL, err := router.Get("articles.show").URL("id", strconv.FormatInt(a.ID, 10))
+	if err != nil {
+		checkError(err)
+		return ""
+	}
+	return showURL.String()
+}
 
 func initDB() {
 	var err error
@@ -97,7 +110,24 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "访问文章列表")
+	rows, err := db.Query("select * from articles")
+	checkError(err)
+	defer rows.Close()
+
+	var articles []Article
+	for rows.Next() {
+		var article Article
+		err := rows.Scan(&article.ID, &article.Title, &article.Body)
+		checkError(err)
+		articles = append(articles, article)
+	}
+	err = rows.Err()
+	checkError(err)
+
+	tmpl, err := template.ParseFiles("resources/views/articles/index.gohtml")
+	checkError(err)
+
+	tmpl.Execute(w, articles)
 }
 
 func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
