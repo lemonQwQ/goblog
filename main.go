@@ -109,7 +109,7 @@ func Int64ToString(num int64) string {
 
 func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 	// 1.获取URL参数
-	id := getRouteVariable("id", r)
+	id := route.GetRouteVariable("id", r)
 	// 2.读取对应的文章数据
 	article, err := getArticleByID(id)
 	// 3.如果出现错误
@@ -282,12 +282,6 @@ func createTables() {
 	checkError(err)
 }
 
-// 请求体中获取传递的参数parameterName
-func getRouteVariable(parameterName string, r *http.Request) string {
-	vars := mux.Vars(r)
-	return vars[parameterName]
-}
-
 // 通过id获取article对象
 func getArticleByID(id string) (Article, error) {
 	article := Article{}
@@ -298,7 +292,7 @@ func getArticleByID(id string) (Article, error) {
 
 func articlesEditHandler(w http.ResponseWriter, r *http.Request) {
 	// 1.获取URL参数
-	id := getRouteVariable("id", r)
+	id := route.GetRouteVariable("id", r)
 
 	// 2.读取对应的文章数据
 	article, err := getArticleByID(id)
@@ -327,7 +321,7 @@ func articlesEditHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func articlesUpdateHandler(w http.ResponseWriter, r *http.Request) {
-	id := getRouteVariable("id", r)
+	id := route.GetRouteVariable("id", r)
 	_, err := getArticleByID(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -392,7 +386,7 @@ func validateArticleFormData(title string, body string) map[string]string {
 }
 
 func articlesDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	id := getRouteVariable("id", r)
+	id := route.GetRouteVariable("id", r)
 	article, err := getArticleByID(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
