@@ -6,7 +6,8 @@ import (
 )
 
 // PageController 处理静态页面
-type PageController struct{}
+type PageController struct {
+}
 
 // Home 首页
 func (*PageController) Home(w http.ResponseWriter, r *http.Request) {
