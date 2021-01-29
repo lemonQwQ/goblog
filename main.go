@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"goblog/pkg/route"
 	"log"
 	"net/http"
 	"net/url"
@@ -30,7 +31,7 @@ type Article struct {
 	ID          int64
 }
 
-var router = mux.NewRouter()
+var router *mux.Router
 var db *sql.DB
 
 // Link 方法用来生成文章链接
@@ -101,16 +102,6 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "博客用以记录笔记，如有反馈请联系："+"<a href=\"#\">tt</a>")
 }
 
-// RouteName2URL 通过路由名称来获取URL
-func RouteName2URL(routerName string, pairs ...string) string {
-	url, err := router.Get(routerName).URL(pairs...)
-	if err != nil {
-		checkError(err)
-		return ""
-	}
-	return url.String()
-}
-
 // Int64ToString 将 int64 转换为 string
 func Int64ToString(num int64) string {
 	return strconv.FormatInt(num, 10)
@@ -138,7 +129,7 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 		tmpl.Execute(w, article)*/
 		tmpl, err := template.New("show.gohtml").
 			Funcs(template.FuncMap{
-				"RouteName2URL": RouteName2URL,
+				"RouteName2URL": route.Name2URL,
 				"Int64ToString": Int64ToString,
 			}).
 			ParseFiles("resources/views/articles/show.gohtml")
@@ -434,6 +425,9 @@ func articlesDeleteHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	initDB()
 	createTables()
+
+	route.Initialize()
+	router = route.Router
 
 	router.HandleFunc("/", homeHandler).Methods("GET").Name("home")
 	router.HandleFunc("/about", aboutHandler).Methods("GET").Name("about")
