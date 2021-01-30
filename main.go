@@ -54,78 +54,6 @@ func getRouteVariable(parameterName string, r *http.Request) string {
 	return vars[parameterName]
 }
 
-func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
-	title := r.PostFormValue("title")
-	body := r.PostFormValue("body")
-
-	errs := validateArticleFormData(title, body)
-
-	if len(errs) == 0 {
-		// fmt.Fprintf(w, "验证通过！<br>")
-		// fmt.Fprintf(w, "title 的值为：%v <br>", title)
-		// fmt.Fprintf(w, "title 的长度为：%v <br>", utf8.RuneCountInString(title))
-		// fmt.Fprintf(w, "body 的值为：%v <br>", body)
-		// fmt.Fprintf(w, "body 的长度为：%v <br>", utf8.RuneCountInString(body))
-		lastInsertID, err := saveArticleToDB(title, body)
-		if lastInsertID > 0 {
-			fmt.Fprint(w, "插入成功， ID为："+strconv.FormatInt(lastInsertID, 10))
-		} else {
-			logger.LogError(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, "500 服务器内部错误")
-		}
-	} else {
-		storeURL, _ := router.Get("articles.store").URL()
-
-		data := ArticlesFormData{
-			Title:  title,
-			Body:   body,
-			URL:    storeURL,
-			Errors: errs,
-		}
-
-		// tmpl, err := template.New("create-form").Parse(html)
-		tmpl, err := template.ParseFiles("resources/views/articles/create.gohtml")
-
-		if err != nil {
-			panic(err)
-		}
-
-		tmpl.Execute(w, data)
-	}
-}
-
-//saveArticleToDB 将 article 保存到数据库中
-func saveArticleToDB(title string, body string) (int64, error) {
-	var (
-		id   int64
-		err  error
-		rs   sql.Result
-		stmt *sql.Stmt
-	)
-
-	// 预处理
-	stmt, err = db.Prepare("insert into articles(title, body) values(?,?)")
-	// 例行的错误检测
-	if err != nil {
-		return 0, err
-	}
-	// 在此函数运行结束后关闭此语句，防止占用sql连接
-	defer stmt.Close()
-
-	// 传参进入绑定的内容
-	rs, err = stmt.Exec(title, body)
-	if err != nil {
-		return 0, err
-	}
-
-	if id, err = rs.LastInsertId(); id > 0 {
-		return id, nil
-	}
-
-	return 0, err
-}
-
 func forceHTMLMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 设置标头
@@ -142,23 +70,6 @@ func removeTrailingSlash(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
-}
-
-func articlesCreateHandler(w http.ResponseWriter, r *http.Request) {
-	storeURL, _ := router.Get("articles.store").URL()
-	data := ArticlesFormData{
-		Title:  "",
-		Body:   "",
-		URL:    storeURL,
-		Errors: nil,
-	}
-
-	tmpl, err := template.ParseFiles("resources/views/articles/create.gohtml")
-	if err != nil {
-		panic(err)
-	}
-
-	tmpl.Execute(w, data)
 }
 
 // 通过id获取article对象
@@ -303,8 +214,6 @@ func main() {
 	bootstrap.SetupDB()
 	router = bootstrap.SetupRoute()
 
-	router.HandleFunc("/articles", articlesStoreHandler).Methods("POST").Name("articles.store")
-	router.HandleFunc("/articles/create", articlesCreateHandler).Methods("GET").Name("articles.create")
 	router.HandleFunc("/articles/{id:[0-9]+}/edit", articlesEditHandler).Methods("GET").Name("articles.edit")
 	router.HandleFunc("/articles/{id:[0-9]+}", articlesUpdateHandler).Methods("POST").Name("articles.update")
 	router.HandleFunc("/articles/{id:[0-9]+}/delete", articlesDeleteHandler).Methods("POST").Name("articles.delete")
