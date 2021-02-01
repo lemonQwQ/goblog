@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"goblog/app/http/middlewares"
 	"goblog/bootstrap"
-	"goblog/pkg/database"
 	"net/http"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -16,8 +15,8 @@ var db *sql.DB
 
 func main() {
 
-	database.Initialize()
-	db = database.DB
+	// database.Initialize()
+	// db = database.DB
 
 	bootstrap.SetupDB()
 	router = bootstrap.SetupRoute()
