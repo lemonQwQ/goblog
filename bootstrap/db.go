@@ -1,9 +1,9 @@
 package bootstrap
 
 import (
+	"goblog/app/models/article"
 	"goblog/app/models/user"
 	"goblog/pkg/model"
-	"goblog/pkg/models/article"
 	"time"
 
 	"gorm.io/gorm"
@@ -15,7 +15,6 @@ func SetupDB() {
 	// 连接并设置数据库
 	db := model.ConnectDB()
 
-	
 	sqlDB, _ := db.DB()
 
 	sqlDB.SetMaxOpenConns(100)
