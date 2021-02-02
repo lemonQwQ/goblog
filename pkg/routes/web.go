@@ -29,6 +29,7 @@ func RegisterWebRoutes(r *mux.Router) {
 	r.HandleFunc("/articles/{id:[0-9]+}/delete", ac.Delete).Methods("POST").Name("articles.delete")
 	r.HandleFunc("/auth/login", auc.Login).Methods("GET").Name("auth.login")
 	r.HandleFunc("/auth/login", auc.DoLogin).Methods("POST").Name("auth.dologin")
+	r.HandleFunc("/auth/logout", auc.Logout).Methods("POST").Name("auth.logout")
 
 	// 静态资源
 	r.PathPrefix("/css/").Handler(http.FileServer(http.Dir("./public")))
