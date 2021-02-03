@@ -1,6 +1,7 @@
 package session
 
 import (
+	"goblog/pkg/config"
 	"goblog/pkg/logger"
 	"net/http"
 
@@ -8,7 +9,7 @@ import (
 )
 
 // Store gorilla session 的存储库
-var Store = sessions.NewCookieStore([]byte("33446a9dcf9ea060a0a6532b166da32f304af0de"))
+var Store = sessions.NewCookieStore([]byte(config.GetString("app.key")))
 
 // Session 当前会话
 var Session *sessions.Session
@@ -22,7 +23,9 @@ var Response http.ResponseWriter
 // StartSession 初始化会话，在中间件中调用
 func StartSession(w http.ResponseWriter, r *http.Request) {
 	var err error
-	Session, err = Store.Get(r, "goblog-session")
+	// Store.Get() 的第二个参数是 Cookie 的名称
+	// gorilla/sessions 支持多会话， 本项目我们只使用单一会话即可
+	Session, err = Store.Get(r, config.GetString("session.session_name"))
 	logger.LogError(err)
 
 	Request = r
