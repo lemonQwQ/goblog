@@ -13,6 +13,7 @@ func RegisterWebRoutes(r *mux.Router) {
 	pc := new(controllers.PageController)
 	ac := new(controllers.ArticlesController)
 	auc := new(controllers.AuthController)
+	uc := new(controllers.UserController)
 
 	// 静态页面
 	r.NotFoundHandler = http.HandlerFunc(pc.NotFound)
@@ -38,6 +39,7 @@ func RegisterWebRoutes(r *mux.Router) {
 	r.HandleFunc("/auth/login", middlewares.Guest(auc.Login)).Methods("GET").Name("auth.login")
 	r.HandleFunc("/auth/login", middlewares.Guest(auc.DoLogin)).Methods("POST").Name("auth.dologin")
 	r.HandleFunc("/auth/logout", middlewares.Auth(auc.Logout)).Methods("POST").Name("auth.logout")
+	r.HandleFunc("/users/{id:[0-9]+}", uc.Show).Methods("GET").Name("users.show")
 
 	// 中间件：强制内容类型为 HTML
 	// r.Use(middlewares.ForceHTML)
