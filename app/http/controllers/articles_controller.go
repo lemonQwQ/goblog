@@ -40,14 +40,15 @@ func (ac *ArticlesController) Index(w http.ResponseWriter, r *http.Request) {
 
 	// fmt.Fprint(w, config.Get("app.name"))
 
-	articles, err := article.GetAll()
+	articles, pagerData, err := article.GetAll(r, 2)
 	// fmt.Println("文章数据：", articles)
 	if err != nil {
 		ac.ResponceForSQLError(w, err)
 	} else {
 		// ---  2. 加载模板 ---
 		view.Render(w, view.D{
-			"Articles": articles,
+			"Articles":  articles,
+			"PagerData": pagerData,
 		}, "articles.index", "articles._article_meta")
 	}
 }
