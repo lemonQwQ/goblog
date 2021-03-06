@@ -36,6 +36,19 @@ func GetAll(r *http.Request, perPage int) ([]Article, pagination.ViewData, error
 	return articles, viewData, nil
 }
 
+// GetByUserIDCS 获取全部文章
+func GetByUserIDCS(uid string, r *http.Request, perPage int) ([]Article, pagination.ViewData, error) {
+	db := model.DB.Model(Article{}).Where("user_id = ?", uid).Preload("User").Order("created_at desc")
+	_pager := pagination.New(r, db, route.Name2URL("articles.index"), perPage)
+
+	viewData := _pager.Paging()
+
+	// 获取数据
+	var articles []Article
+	_pager.Results(&articles)
+	return articles, viewData, nil
+}
+
 // Create 创建文章，通过 article.ID 来判断是否创建成功
 func (article *Article) Create() (err error) {
 	if err = model.DB.Create(&article).Error; err != nil {
