@@ -20,10 +20,12 @@ func (uc *UserController) Show(w http.ResponseWriter, r *http.Request) {
 	id := route.GetRouteVariable("id", r)
 	_user, err := user.Get(id)
 
+	articles, pagerData, err := article.GetByUserIDCS(_user.GetStringID(), r, 3)
+	
 	if err != nil {
 		uc.ResponceForSQLError(w, err)
 	} else {
-		articles, pagerData, err := article.GetByUserIDCS(_user.GetStringID(), r, 2)
+		
 		if err != nil {
 			logger.LogError(err)
 			w.WriteHeader(http.StatusInternalServerError)

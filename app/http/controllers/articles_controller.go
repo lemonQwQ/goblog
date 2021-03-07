@@ -40,7 +40,7 @@ func (ac *ArticlesController) Index(w http.ResponseWriter, r *http.Request) {
 
 	// fmt.Fprint(w, config.Get("app.name"))
 
-	articles, pagerData, err := article.GetAll(r, 2)
+	articles, pagerData, err := article.GetAll(r, 3)
 	// fmt.Println("文章数据：", articles)
 	if err != nil {
 		ac.ResponceForSQLError(w, err)
