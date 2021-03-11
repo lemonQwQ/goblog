@@ -94,7 +94,7 @@ func GetByCategoryID(cid string, r *http.Request, perPage int) ([]Article, pagin
 // GetByUserIDCS 获取全部文章
 func GetByUserIDCS(uid string, r *http.Request, perPage int) ([]Article, pagination.ViewData, error) {
 	db := model.DB.Model(Article{}).Where("user_id = ?", uid).Preload("User").Order("created_at desc")
-	_pager := pagination.New(r, db, route.Name2URL("articles.index", "id", uid), perPage)
+	_pager := pagination.New(r, db, route.Name2URL("users.show", "id", uid), perPage)
 
 	viewData := _pager.Paging()
 
