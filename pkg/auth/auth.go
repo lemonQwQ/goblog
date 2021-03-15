@@ -37,7 +37,7 @@ func Attempt(email string, password string) error {
 	// 出现错误
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return errors.New("账号不存在或者密码错误")
+			return errors.New("邮箱不存在或者密码错误")
 		} else {
 			return errors.New("内部错误，请稍后尝试")
 		}
@@ -45,11 +45,25 @@ func Attempt(email string, password string) error {
 
 	// 匹配密码
 	if !_user.ComparePassword(password) {
-		return errors.New("账号不存在或者密码错误")
+		return errors.New("邮箱不存在或者密码错误")
 	}
 
 	// 登录用户，报错会话
 	session.Put("uid", _user.GetStringID())
+
+	return nil
+}
+
+// Verification 验证邮箱
+func Verification(email string) error {
+	// 根据 Email 验证用户是否存在
+	if _, err := user.GetByEmail(email); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return errors.New("邮箱不存在")
+		} else {
+			return errors.New("内部错误，请稍后尝试")
+		}
+	}
 
 	return nil
 }

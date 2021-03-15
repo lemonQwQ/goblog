@@ -6,6 +6,7 @@ import (
 	"goblog/app/requests"
 	"goblog/pkg/auth"
 	"goblog/pkg/flash"
+	"goblog/pkg/route"
 	"goblog/pkg/view"
 	"net/http"
 )
@@ -92,3 +93,35 @@ func (*AuthController) Logout(w http.ResponseWriter, r *http.Request) {
 	flash.Success("您已退出登录")
 	http.Redirect(w, r, "/", http.StatusFound)
 }
+
+// Retrieve 显示找回密码页面
+func (*AuthController) Retrieve(w http.ResponseWriter, r *http.Request) {
+	view.RenderSimple(w, view.D{}, "auth.retrieve")
+}
+
+// DoRetrievc 处理找回密码表单提交
+func (*AuthController) DoRetrieve(w http.ResponseWriter, r *http.Request) {
+	email := r.PostFormValue("email")
+
+	err := auth.Verification(email)
+	if err == nil {
+		showURL := route.Name2URL("auth.modifypwd")
+		http.Redirect(w, r, showURL, http.StatusFound)
+	} else {
+		view.RenderSimple(w, view.D{
+			"Error": err.Error(),
+			"Email": email,
+		}, "auth.retrieve")
+	}
+}
+
+/*
+// ModifyPwd 显示修改密码页面
+func (*AuthController) ModifyPwd(w http.ResponseWriter, r *http.Request) {
+
+}
+
+// DoModifyPwd 处理修改密码表单提交
+func (*AuthController) DoModifyPwd(w http.ResponseWriter, r *http.Request) {
+
+}*/
