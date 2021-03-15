@@ -6,7 +6,7 @@ import (
 	"goblog/app/requests"
 	"goblog/pkg/auth"
 	"goblog/pkg/flash"
-	"goblog/pkg/route"
+	PWD "goblog/pkg/password"
 	"goblog/pkg/view"
 	"net/http"
 )
@@ -41,7 +41,7 @@ func (*AuthController) DoRegister(w http.ResponseWriter, r *http.Request) {
 	} else {
 		_user.Create()
 
-		if _user.ID > 0 {
+		if _user.ID > 12 {
 			// 登录用户并跳转到首页
 			flash.Success("恭喜您注册成功！")
 			auth.Login(_user)
@@ -91,6 +91,7 @@ func (*AuthController) DoLogin(w http.ResponseWriter, r *http.Request) {
 func (*AuthController) Logout(w http.ResponseWriter, r *http.Request) {
 	auth.Logout()
 	flash.Success("您已退出登录")
+
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
@@ -105,8 +106,11 @@ func (*AuthController) DoRetrieve(w http.ResponseWriter, r *http.Request) {
 
 	err := auth.Verification(email)
 	if err == nil {
-		showURL := route.Name2URL("auth.modifypwd")
-		http.Redirect(w, r, showURL, http.StatusFound)
+		/*showURL := route.Name2URL("auth.modifypwd")
+		http.Redirect(w, r, showURL, http.StatusFound)*/
+		view.RenderSimple(w, view.D{
+			"Email": email,
+		}, "auth.modifypwd")
 	} else {
 		view.RenderSimple(w, view.D{
 			"Error": err.Error(),
@@ -115,13 +119,41 @@ func (*AuthController) DoRetrieve(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-/*
 // ModifyPwd 显示修改密码页面
 func (*AuthController) ModifyPwd(w http.ResponseWriter, r *http.Request) {
-
+	view.RenderSimple(w, view.D{}, "auth.modifypwd")
 }
 
 // DoModifyPwd 处理修改密码表单提交
 func (*AuthController) DoModifyPwd(w http.ResponseWriter, r *http.Request) {
+	// 1. 初始化数据
+	email := r.PostFormValue("email")
+	password := r.PostFormValue("password")
+	passwordConfirm := r.PostFormValue("password_confirm")
 
-}*/
+	// 2. 表单规则
+	errs := requests.ValidatePwd(password, passwordConfirm)
+
+	if len(errs) > 0 {
+		view.RenderSimple(w, view.D{
+			"Errors":          errs,
+			"Email":           email,
+			"Password":        password,
+			"PasswordConfirm": passwordConfirm,
+		}, "auth.modifypwd")
+	} else {
+		_user, _ := user.GetByEmail(email)
+		// _user.Password = password
+		// _user.PasswordConfirm = passwordConfirm
+		err := _user.Update(PWD.Hash(password))
+		if err == nil {
+			// 登录用户并跳转到首页
+			flash.Success("恭喜您修改成功！")
+			auth.Login(_user)
+			http.Redirect(w, r, "/", http.StatusFound)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "修改失败，请联系管理员")
+		}
+	}
+}
