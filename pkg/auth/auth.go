@@ -8,6 +8,12 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	notLogin = iota
+	logged
+	verified
+)
+
 func _getUID() string {
 	_uid := session.Get("uid")
 	uid, ok := _uid.(string)
@@ -54,8 +60,8 @@ func Attempt(email string, password string) error {
 	return nil
 }
 
-// Verification 验证邮箱
-func Verification(email string) error {
+// VerifyEmail 验证邮箱
+func VerifyEmail(email string) error {
 	// 根据 Email 验证用户是否存在
 	if _, err := user.GetByEmail(email); err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -65,6 +71,7 @@ func Verification(email string) error {
 		}
 	}
 
+	session.Put("authority", "exist")
 	return nil
 }
 
@@ -78,7 +85,23 @@ func Logout() {
 	session.Forget("uid")
 }
 
-// Check 检测是否登录
-func Check() bool {
-	return len(_getUID()) > 0
+// Check 检测当前权限
+func Check() int {
+	if len(_getUID()) <= 0 {
+		return notLogin
+	}
+	if len(_getAuthority()) <= 0 {
+		return logged
+	}
+	return verified
+}
+
+// _getAuthority 获取权限
+func _getAuthority() string {
+	_authority := session.Get("authority")
+	authority, ok := _authority.(string)
+	if ok && len(authority) > 0 {
+		return authority
+	}
+	return ""
 }

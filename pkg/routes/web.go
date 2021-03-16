@@ -43,11 +43,14 @@ func RegisterWebRoutes(r *mux.Router) {
 	r.HandleFunc("/auth/do-register", middlewares.Guest(auc.DoRegister)).Methods("POST").Name("auth.doregister")
 	r.HandleFunc("/auth/login", middlewares.Guest(auc.Login)).Methods("GET").Name("auth.login")
 	r.HandleFunc("/auth/do-login", middlewares.Guest(auc.DoLogin)).Methods("POST").Name("auth.dologin")
+
 	r.HandleFunc("/auth/retrieve", middlewares.Guest(auc.Retrieve)).Methods("GET").Name("auth.retrieve")
 	r.HandleFunc("/auth/do-retrieve", middlewares.Guest(auc.DoRetrieve)).Methods("POST").Name("auth.doretrieve")
-	r.HandleFunc("/auth/modifypwd", middlewares.Guest(auc.ModifyPwd)).Methods("GET").Name("auth.modifypwd")
-	r.HandleFunc("/auth/do-modifypwd", middlewares.Guest(auc.DoModifyPwd)).Methods("POST").Name("auth.domodifypwd")
+	r.HandleFunc("/auth/verification", auc.Verification).Methods("GET").Name("auth.verification")
+	r.HandleFunc("/auth/do-verification", auc.DoVerification).Methods("POST").Name("auth.doverification")
 
+	r.HandleFunc("/auth/modifypwd", middlewares.Admin(auc.ModifyPwd)).Methods("GET").Name("auth.modifypwd")
+	r.HandleFunc("/auth/do-modifypwd", middlewares.Admin(auc.DoModifyPwd)).Methods("POST").Name("auth.domodifypwd")
 	r.HandleFunc("/auth/logout", middlewares.Auth(auc.Logout)).Methods("POST").Name("auth.logout")
 
 	uc := new(controllers.UserController)

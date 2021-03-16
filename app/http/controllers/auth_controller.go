@@ -5,10 +5,15 @@ import (
 	"goblog/app/models/user"
 	"goblog/app/requests"
 	"goblog/pkg/auth"
+	"goblog/pkg/config"
 	"goblog/pkg/flash"
+	"goblog/pkg/logger"
 	PWD "goblog/pkg/password"
+	"goblog/pkg/session"
 	"goblog/pkg/view"
 	"net/http"
+
+	"gopkg.in/gomail.v2"
 )
 
 // AuthController 处理静态页面
@@ -55,15 +60,6 @@ func (*AuthController) DoRegister(w http.ResponseWriter, r *http.Request) {
 
 // Login 显示登录表单
 func (*AuthController) Login(w http.ResponseWriter, r *http.Request) {
-
-	// fmt.Fprint(w, session.Get("uid"))
-
-	// session.Flush()
-
-	// session.Forget("uid")
-
-	// session.Put("uid", "1")
-
 	view.RenderSimple(w, view.D{}, "auth.login")
 }
 
@@ -102,19 +98,35 @@ func (*AuthController) Retrieve(w http.ResponseWriter, r *http.Request) {
 
 // DoRetrievc 处理找回密码表单提交
 func (*AuthController) DoRetrieve(w http.ResponseWriter, r *http.Request) {
-	email := r.PostFormValue("email")
+	to := r.PostFormValue("email")
 
-	err := auth.Verification(email)
+	err := auth.VerifyEmail(to)
 	if err == nil {
-		/*showURL := route.Name2URL("auth.modifypwd")
-		http.Redirect(w, r, showURL, http.StatusFound)*/
+		from := config.GetString("email.from")
+		// 配置邮件信息
+		m := gomail.NewMessage()
+		m.SetAddressHeader("From", from, config.GetString("email.sender"))
+		m.SetHeader("To", to)
+		m.SetHeader("Subject", config.GetString("email.subject"))
+		// m.Embed()
+		m.SetBody(config.GetString("email.type"), "123456")
+
+		// 发生邮件
+		d := gomail.NewDialer(config.GetString("email.host"), config.GetInt("email.port"), from, config.GetString("email.pwd"))
+
+		if err := d.DialAndSend(m); err != nil {
+			logger.LogError(err)
+			flash.Danger(config.GetString("email.host") + config.GetString("email.port") + from + config.GetString("email.pwd"))
+			http.Redirect(w, r, "/", http.StatusFound)
+		}
 		view.RenderSimple(w, view.D{
-			"Email": email,
-		}, "auth.modifypwd")
+			"Email": to,
+		}, "auth.verification")
 	} else {
+		session.Flush()
 		view.RenderSimple(w, view.D{
 			"Error": err.Error(),
-			"Email": email,
+			"Email": to,
 		}, "auth.retrieve")
 	}
 }
@@ -143,8 +155,6 @@ func (*AuthController) DoModifyPwd(w http.ResponseWriter, r *http.Request) {
 		}, "auth.modifypwd")
 	} else {
 		_user, _ := user.GetByEmail(email)
-		// _user.Password = password
-		// _user.PasswordConfirm = passwordConfirm
 		err := _user.Update(PWD.Hash(password))
 		if err == nil {
 			// 登录用户并跳转到首页
@@ -156,4 +166,14 @@ func (*AuthController) DoModifyPwd(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, "修改失败，请联系管理员")
 		}
 	}
+}
+
+// Verification 显示邮箱验证页面
+func (*AuthController) Verification(w http.ResponseWriter, r *http.Request) {
+
+}
+
+// DoVerification 处理邮箱验证表单提交
+func (*AuthController) DoVerification(w http.ResponseWriter, r *http.Request) {
+
 }

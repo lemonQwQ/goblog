@@ -6,11 +6,11 @@ import (
 	"net/http"
 )
 
-// Auth 登录用户才可访问
-func Auth(next HttpHandlerFunc) HttpHandlerFunc {
+//Admin 已验证邮箱的才访问
+func Admin(next HttpHandlerFunc) HttpHandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if auth.Check() == 0 {
-			flash.Warning("登录用户才能访问此页面")
+		if auth.Check() <= 1 {
+			flash.Warning("无法访问此页面")
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}

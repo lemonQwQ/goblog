@@ -53,5 +53,4 @@ func addFlash(key string, message string) {
 	flashes := Flashes{}
 	flashes[key] = message
 	session.Put(flashKey, flashes)
-	session.Save()
 }
