@@ -55,7 +55,8 @@ func Attempt(email string, password string) error {
 	}
 
 	// 登录用户，报错会话
-	session.Put("uid", _user.GetStringID())
+	// session.Put("uid", _user.GetStringID())
+	Login(_user)
 
 	return nil
 }
@@ -83,22 +84,23 @@ func Login(_user user.User) {
 // Logout 退出用户
 func Logout() {
 	session.Forget("uid")
+	// session.Flush()
 }
 
 // Check 检测当前权限
 func Check() int {
+	if len(_getAuthority()) > 0 {
+		return verified
+	}
 	if len(_getUID()) <= 0 {
 		return notLogin
 	}
-	if len(_getAuthority()) <= 0 {
-		return logged
-	}
-	return verified
+	return logged
 }
 
 // _getAuthority 获取权限
 func _getAuthority() string {
-	_authority := session.Get("authority")
+	_authority := session.Get("hash")
 	authority, ok := _authority.(string)
 	if ok && len(authority) > 0 {
 		return authority

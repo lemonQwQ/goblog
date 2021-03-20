@@ -5,15 +5,14 @@ import (
 	"goblog/app/models/user"
 	"goblog/app/requests"
 	"goblog/pkg/auth"
-	"goblog/pkg/config"
+	"goblog/pkg/email"
 	"goblog/pkg/flash"
-	"goblog/pkg/logger"
+	"goblog/pkg/password"
 	PWD "goblog/pkg/password"
 	"goblog/pkg/session"
+	"goblog/pkg/util"
 	"goblog/pkg/view"
 	"net/http"
-
-	"gopkg.in/gomail.v2"
 )
 
 // AuthController 处理静态页面
@@ -102,26 +101,15 @@ func (*AuthController) DoRetrieve(w http.ResponseWriter, r *http.Request) {
 
 	err := auth.VerifyEmail(to)
 	if err == nil {
-		from := config.GetString("email.from")
-		// 配置邮件信息
-		m := gomail.NewMessage()
-		m.SetAddressHeader("From", from, config.GetString("email.sender"))
-		m.SetHeader("To", to)
-		m.SetHeader("Subject", config.GetString("email.subject"))
-		// m.Embed()
-		m.SetBody(config.GetString("email.type"), "123456")
-
-		// 发生邮件
-		d := gomail.NewDialer(config.GetString("email.host"), config.GetInt("email.port"), from, config.GetString("email.pwd"))
-
-		if err := d.DialAndSend(m); err != nil {
-			logger.LogError(err)
-			flash.Danger(config.GetString("email.host") + config.GetString("email.port") + from + config.GetString("email.pwd"))
+		code := util.GetRandom(6)
+		err := email.Send(to, code)
+		if err != nil {
+			flash.Danger("内部错误，请稍后再试！")
 			http.Redirect(w, r, "/", http.StatusFound)
 		}
-		view.RenderSimple(w, view.D{
-			"Email": to,
-		}, "auth.verification")
+		session.Put("hash", password.Hash(code))
+		session.Put("email", to)
+		view.RenderSimple(w, view.D{}, "auth.verification")
 	} else {
 		session.Flush()
 		view.RenderSimple(w, view.D{
@@ -133,13 +121,19 @@ func (*AuthController) DoRetrieve(w http.ResponseWriter, r *http.Request) {
 
 // ModifyPwd 显示修改密码页面
 func (*AuthController) ModifyPwd(w http.ResponseWriter, r *http.Request) {
-	view.RenderSimple(w, view.D{}, "auth.modifypwd")
+	code := r.PostFormValue("vcode")
+	hash := session.Get("hash")
+	if password.CheckHash(code, hash.(string)) {
+		view.RenderSimple(w, view.D{}, "auth.modifypwd")
+	} else {
+		flash.Danger("验证失败,请重新验证!")
+		http.Redirect(w, r, "/", http.StatusFound)
+	}
 }
 
 // DoModifyPwd 处理修改密码表单提交
 func (*AuthController) DoModifyPwd(w http.ResponseWriter, r *http.Request) {
 	// 1. 初始化数据
-	email := r.PostFormValue("email")
 	password := r.PostFormValue("password")
 	passwordConfirm := r.PostFormValue("password_confirm")
 
@@ -149,12 +143,14 @@ func (*AuthController) DoModifyPwd(w http.ResponseWriter, r *http.Request) {
 	if len(errs) > 0 {
 		view.RenderSimple(w, view.D{
 			"Errors":          errs,
-			"Email":           email,
 			"Password":        password,
 			"PasswordConfirm": passwordConfirm,
 		}, "auth.modifypwd")
 	} else {
-		_user, _ := user.GetByEmail(email)
+		email := session.Get("email")
+		session.Forget("email")
+		session.Forget("hash")
+		_user, _ := user.GetByEmail(email.(string))
 		err := _user.Update(PWD.Hash(password))
 		if err == nil {
 			// 登录用户并跳转到首页
@@ -168,7 +164,7 @@ func (*AuthController) DoModifyPwd(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Verification 显示邮箱验证页面
+// Verification 处理邮箱验证表单提交
 func (*AuthController) Verification(w http.ResponseWriter, r *http.Request) {
 
 }

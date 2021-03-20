@@ -7,17 +7,13 @@
 
   <h3 class="mb-5 text-center">输入验证码</h3>
 
-  <form action="{{ RouteName2URL "auth.doverification" }}" method="post">
+  <form action="{{ RouteName2URL "auth.modifypwd" }}" method="post">
 
     <div class="form-group row mb-3">
       <label for="vcode" class="col-md-4 col-form-label text-md-right">验证码</label>
       <div class="col-md-6">
-        <input id="vcode" type="text" class="form-control {{if .Error }}is-invalid {{end}}" name="vcode" value="" required="">
-        {{ with .Error }}
-          <div class="invalid-feedback">
-              <p>{{ . }}</p>
-          </div>
-        {{ end }}
+        <input id="vcode" type="text" class="form-control" name="vcode" value="" required="">
+        <input id="hash" type="hidden" value="{{ . }}">
       </div>
     </div>
 
