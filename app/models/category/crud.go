@@ -33,3 +33,11 @@ func Get(idstr string) (Category, error) {
 	}
 	return category, nil
 }
+
+func GetByName(name string) (Category, error) {
+	var category Category
+	if err := model.DB.Where("name = ?", name).First(&category).Error; err != nil {
+		return category, err
+	}
+	return category, nil
+}

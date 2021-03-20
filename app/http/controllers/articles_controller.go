@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"goblog/app/models/article"
+	"goblog/app/models/category"
 	"goblog/app/policies"
 	"goblog/app/requests"
 	"goblog/pkg/auth"
@@ -62,10 +63,14 @@ func (*ArticlesController) Create(w http.ResponseWriter, r *http.Request) {
 func (*ArticlesController) Store(w http.ResponseWriter, r *http.Request) {
 
 	currentUser := auth.User()
+	categoryName := r.PostFormValue("category")
+	currentCategory, _ := category.GetByName(categoryName)
+
 	_article := article.Article{
-		Title:  r.PostFormValue("title"),
-		Body:   r.PostFormValue("body"),
-		UserID: currentUser.ID,
+		Title:      r.PostFormValue("title"),
+		Body:       r.PostFormValue("body"),
+		UserID:     currentUser.ID,
+		CategoryID: currentCategory.ID,
 	}
 	errors := requests.ValidateArticleForm(_article)
 

@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"goblog/pkg/util"
+	"goblog/app/models/category"
 	"net/http"
 	"strconv"
 	"testing"
@@ -49,6 +49,8 @@ func TestAllPage(t *testing.T) {
 }
 
 func TestFun(t *testing.T) {
-	str := util.GetRandom(4)
-	assert.Equal(t, 0, 1, "str = "+str)
+	// str := util.GetRandom(4)
+	// assert.Equal(t, 0, 1, "str = "+str)
+	cate, err := category.GetByName("未分类")
+	assert.NoError(t, err, "错误："+cate.Name)
 }
