@@ -11,7 +11,12 @@
       {{ template "article-meta" .Article }}
 
       <hr>
-      {{ .Article.Body }}
+      <div class="form-group mt-3 body"></div>
+      <script>
+        var body = document.getElementsByClassName("body");
+        body[0].innerHTML = "{{ .Article.Body }}"
+        console.log(body)
+      </script>
 
       {{ if .CanModifyArticle }}
       <form class="mt-4" action="{{ RouteName2URL "articles.delete" "id" .Article.GetStringID }}" method="post">

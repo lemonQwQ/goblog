@@ -7,6 +7,8 @@ import (
 	"goblog/pkg/route"
 	"goblog/pkg/types"
 	"net/http"
+
+	"github.com/russross/blackfriday"
 )
 
 // Get 通过 ID 获取文章
@@ -16,6 +18,8 @@ func Get(idstr string) (Article, error) {
 	if err := model.DB.Preload("User").Preload("Category").First(&article, id).Error; err != nil {
 		return article, err
 	}
+	output := blackfriday.MarkdownBasic([]byte(article.Body))
+	article.Body = string(output)
 	return article, nil
 }
 

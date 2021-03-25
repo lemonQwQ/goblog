@@ -7,6 +7,7 @@ import (
 	"goblog/app/policies"
 	"goblog/app/requests"
 	"goblog/pkg/auth"
+	"goblog/pkg/flash"
 	"goblog/pkg/logger"
 	"goblog/pkg/route"
 	"goblog/pkg/view"
@@ -120,19 +121,22 @@ func (ac *ArticlesController) Edit(w http.ResponseWriter, r *http.Request) {
 func (ac *ArticlesController) Update(w http.ResponseWriter, r *http.Request) {
 	id := route.GetRouteVariable("id", r)
 	_article, err := article.Get(id)
+
 	if err != nil {
 		ac.ResponceForSQLError(w, err)
 	} else {
 		if !policies.CanModifyArticle(_article) {
 			ac.ResponseForUnauthorized(w, r)
 		} else {
-
 			_article.Title = r.PostFormValue("title")
 			_article.Body = r.PostFormValue("body")
-
+			categoryName := r.PostFormValue("category")
+			_article.Category, _ = category.GetByName(categoryName)
+			_article.CategoryID = _article.Category.ID
 			errs := requests.ValidateArticleForm(_article)
 
 			if len(errs) == 0 {
+
 				rowsAffected, err := _article.Update()
 
 				if err != nil {
@@ -140,13 +144,12 @@ func (ac *ArticlesController) Update(w http.ResponseWriter, r *http.Request) {
 					fmt.Fprint(w, "500 服务器内部错误")
 					return
 				}
-
-				if rowsAffected > 0 {
-					showURL := route.Name2URL("articles.show", "id", id)
-					http.Redirect(w, r, showURL, http.StatusFound)
-				} else {
-					fmt.Fprint(w, "您没有做任何更改！")
+				if rowsAffected == 0 {
+					flash.Warning("文章未修改！")
 				}
+				showURL := route.Name2URL("articles.show", "id", id)
+				http.Redirect(w, r, showURL, http.StatusFound)
+
 			} else {
 				view.Render(w, view.D{
 					"Article": _article,

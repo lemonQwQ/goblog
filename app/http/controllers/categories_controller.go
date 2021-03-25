@@ -1,10 +1,10 @@
 package controllers
 
 import (
-	"fmt"
 	"goblog/app/models/article"
 	"goblog/app/models/category"
 	"goblog/app/requests"
+	"goblog/pkg/flash"
 	"goblog/pkg/route"
 	"goblog/pkg/view"
 	"net/http"
@@ -34,10 +34,12 @@ func (*CategoriesController) Store(w http.ResponseWriter, r *http.Request) {
 	if len(errors) == 0 {
 		_category.Create()
 		if _category.ID > 0 {
-			fmt.Fprint(w, "创建成功")
+			flash.Success(_category.Name + "分类创建成功")
+			http.Redirect(w, r, "/", http.StatusFound)
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, "创建文章分类失败，请联系管理员")
+			flash.Info(_category.Name + "创建文章分类失败，请联系管理员")
+			http.Redirect(w, r, "/", http.StatusFound)
 		}
 	} else {
 		view.Render(w, view.D{
